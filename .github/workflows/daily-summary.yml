@@ -2,7 +2,7 @@ name: Daily Email Summary
 
 on:
   schedule:
-    - cron: "0 13 * * *"
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -31,6 +31,7 @@ jobs:
           GMAIL_USER_EMAIL: ${{ secrets.GMAIL_USER_EMAIL }}
           SUMMARY_RECIPIENT_EMAIL: ${{ secrets.SUMMARY_RECIPIENT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'America/Los_Angeles' }}
+          RUN_HOUR_LOCAL: "6"
           SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gpt-4.1-mini' }}
           MAX_EMAILS: ${{ vars.MAX_EMAILS || '500' }}
         run: python email_summarize_bot.py
