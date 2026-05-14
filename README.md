@@ -37,6 +37,7 @@ Optional repository variables:
 | `TIMEZONE` | `America/Los_Angeles` |
 | `SUMMARY_MODEL` | `gpt-4.1-mini` |
 | `MAX_EMAILS` | `500` |
+| `RUN_HOUR_LOCAL` | `6` |
 
 ## Gmail OAuth Scopes
 
@@ -69,10 +70,10 @@ python email_summarize_bot.py
 
 ## Schedule
 
-GitHub Actions uses UTC cron. The workflow runs at:
+GitHub Actions uses UTC cron, so the workflow wakes up hourly:
 
 ```text
-0 13 * * *
+0 * * * *
 ```
 
-That corresponds to 6:00 AM during Pacific Daylight Time. During Pacific Standard Time, this is 5:00 AM local time. If exact year-round 6:00 AM Pacific time matters, use an external scheduler or update the cron seasonally.
+The script checks `TIMEZONE` and exits unless the local hour equals `RUN_HOUR_LOCAL`. This keeps the digest at 6:00 AM Pacific across daylight saving time changes.
