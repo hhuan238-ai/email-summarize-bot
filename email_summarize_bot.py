@@ -261,6 +261,13 @@ def main() -> None:
     load_dotenv()
 
     tz_name = os.getenv("TIMEZONE", "America/Los_Angeles")
+    run_hour_local = os.getenv("RUN_HOUR_LOCAL")
+    if run_hour_local:
+        now = datetime.now(ZoneInfo(tz_name))
+        if now.hour != int(run_hour_local):
+            print(f"Skipping run at local hour {now.hour}; configured hour is {run_hour_local}.")
+            return
+
     model = os.getenv("SUMMARY_MODEL", "gpt-4.1-mini")
     max_emails = int(os.getenv("MAX_EMAILS", "500"))
     sender = required_env("GMAIL_USER_EMAIL")
