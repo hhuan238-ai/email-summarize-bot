@@ -14,7 +14,7 @@ Daily Gmail summary bot that collects the previous day's received emails, asks O
 
 ## Required Secrets
 
-Add these repository secrets in GitHub. Without them, the workflow cannot read Gmail, call OpenAI, or send email.
+Add these repository secrets in GitHub. Without them, the cloud workflow cannot read Gmail, call OpenAI, or send email.
 
 | Secret | Description |
 | --- | --- |
@@ -24,6 +24,38 @@ Add these repository secrets in GitHub. Without them, the workflow cannot read G
 | `GMAIL_REFRESH_TOKEN` | OAuth refresh token with Gmail read/send scopes. |
 | `GMAIL_USER_EMAIL` | Gmail account to read from and send as, for example `hhuan238@ucr.edu`. |
 | `SUMMARY_RECIPIENT_EMAIL` | Recipient for the digest, for example `hhuan238@ucr.edu`. |
+
+## Cloud Setup
+
+Use GitHub Actions if you want the bot to run while your computer is off.
+
+1. Create an OpenAI API key and save it as the repository secret `OPENAI_API_KEY`.
+2. In Google Cloud, create an OAuth client for a Desktop app.
+3. Copy the OAuth client values into your local shell:
+
+```bash
+export GMAIL_CLIENT_ID="your-client-id"
+export GMAIL_CLIENT_SECRET="your-client-secret"
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:GMAIL_CLIENT_ID="your-client-id"
+$env:GMAIL_CLIENT_SECRET="your-client-secret"
+```
+
+4. Install dependencies and generate the Gmail refresh token:
+
+```bash
+pip install -r requirements.txt
+python scripts/get_gmail_refresh_token.py
+```
+
+5. Sign in with the Gmail account you want summarized and approve the requested Gmail read/send scopes.
+6. Add the printed values to GitHub repository secrets: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, and `GMAIL_REFRESH_TOKEN`.
+7. Add `GMAIL_USER_EMAIL` and `SUMMARY_RECIPIENT_EMAIL` as repository secrets.
+8. Go to the Actions tab, choose "Daily Email Summary", and run it once with "Run workflow" to verify.
 
 Optional repository variables:
 
