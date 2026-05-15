@@ -204,8 +204,8 @@ Body:
 def build_summary(records: list[EmailRecord], target_date: str, model: str) -> str:
     if not records:
         return (
-            f"昨日郵件摘要 - {target_date}\n\n"
-            "昨天沒有收到符合條件的郵件。\n"
+            f"\u6628\u65e5\u90f5\u4ef6\u6458\u8981 - {target_date}\n\n"
+            "\u6628\u5929\u6c92\u6709\u6536\u5230\u7b26\u5408\u689d\u4ef6\u7684\u90f5\u4ef6\u3002\n"
         )
 
     prompt_items = "\n\n---\n\n".join(
@@ -224,22 +224,18 @@ def build_summary(records: list[EmailRecord], target_date: str, model: str) -> s
             },
             {
                 "role": "user",
-                "content": f"""
-請將以下 {len(records)} 封郵件整理成一封每日摘要 email。
-
-日期：{target_date}
-
-請使用這些段落：
-1. 總覽：郵件總數與最重要的 3-5 件事
-2. 需要我回覆或處理的事項
-3. 依主題/寄件者分組的大綱
-4. 每封郵件的精簡摘要：寄件者、時間、主旨、重點、可能的下一步
-5. 重要連結與附件清單
-
-郵件內容：
-
-{prompt_items}
-""".strip(),
+                "content": (
+                    f"Please summarize the following {len(records)} emails into one daily digest email. "
+                    "Write the digest in Traditional Chinese.\n\n"
+                    f"Date: {target_date}\n\n"
+                    "Use these sections:\n"
+                    "1. Overview: total email count and the 3-5 most important items\n"
+                    "2. Items that need my reply or action\n"
+                    "3. Outline grouped by topic or sender\n"
+                    "4. Concise summary for each email: sender, time, subject, key points, possible next step\n"
+                    "5. Important links and attachment list\n\n"
+                    f"Emails:\n\n{prompt_items}"
+                ),
             },
         ],
     )
@@ -257,16 +253,44 @@ def send_email(service: Any, sender: str, recipient: str, subject: str, body: st
     service.users().messages().send(userId="me", body={"raw": encoded}).execute()
 
 
+def sent_digest_exists(service: Any, recipient: str, subject: str) -> bool:
+    query = f'in:sent to:{recipient} subject:"{subject}"'
+    response = service.users().messages().list(userId="me", q=query, maxResults=1).execute()
+    return bool(response.get("messages"))
+
+
+def should_run_now(tz_name: str) -> bool:
+    run_after = os.getenv("RUN_AFTER_HOUR_LOCAL")
+    run_before = os.getenv("RUN_BEFORE_HOUR_LOCAL")
+    exact_hour = os.getenv("RUN_HOUR_LOCAL")
+
+    if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
+        return True
+
+    if not (run_after or run_before or exact_hour):
+        return True
+
+    now = datetime.now(ZoneInfo(tz_name))
+    if exact_hour and not (run_after or run_before):
+        if now.hour != int(exact_hour):
+            print(f"Skipping run at local hour {now.hour}; configured hour is {exact_hour}.")
+            return False
+        return True
+
+    start_hour = int(run_after or exact_hour or "6")
+    end_hour = int(run_before or "12")
+    if not (start_hour <= now.hour < end_hour):
+        print(f"Skipping run at local hour {now.hour}; configured window is {start_hour}:00-{end_hour}:00.")
+        return False
+    return True
+
+
 def main() -> None:
     load_dotenv()
 
     tz_name = os.getenv("TIMEZONE", "America/Los_Angeles")
-    run_hour_local = os.getenv("RUN_HOUR_LOCAL")
-    if run_hour_local:
-        now = datetime.now(ZoneInfo(tz_name))
-        if now.hour != int(run_hour_local):
-            print(f"Skipping run at local hour {now.hour}; configured hour is {run_hour_local}.")
-            return
+    if not should_run_now(tz_name):
+        return
 
     model = os.getenv("SUMMARY_MODEL", "gpt-4.1-mini")
     max_emails = int(os.getenv("MAX_EMAILS", "500"))
@@ -277,11 +301,15 @@ def main() -> None:
     query = gmail_query(start, end)
     service = gmail_service()
 
+    subject = f"\u6628\u65e5\u90f5\u4ef6\u6458\u8981 - {target_date}"
+    if sent_digest_exists(service, recipient, subject):
+        print(f"Digest already sent for {target_date}; skipping duplicate.")
+        return
+
     message_ids = list_message_ids(service, query, max_emails)
     records = [read_message(service, message_id, tz_name) for message_id in message_ids]
     summary = build_summary(records, target_date, model)
 
-    subject = f"昨日郵件摘要 - {target_date}"
     send_email(service, sender, recipient, subject, summary)
     print(f"Sent summary for {target_date} with {len(records)} emails to {recipient}.")
 
