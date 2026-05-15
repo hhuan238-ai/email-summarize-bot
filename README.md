@@ -4,22 +4,17 @@ Daily Gmail summary bot that collects the previous day's received emails, asks O
 
 ## What It Does
 
-- Runs every day at 6:00 AM America/Los_Angeles via GitHub Actions.
+- Wakes up hourly in GitHub Actions.
+- Sends once between 6:00 AM and noon in the configured local timezone.
 - Searches Gmail for messages received during the previous local calendar day.
 - Excludes sent mail, drafts, spam, and trash.
 - Reads sender, recipients, subject, timestamp, snippet, body text, links, and attachment names.
-- Produces a Traditional Chinese digest with:
-  - Overview
-  - Top 3-5 important items
-  - Action items
-  - Topic/sender groups
-  - Per-email concise summaries
-  - Important links and attachment names
-- Sends the result as one email.
+- Produces a Traditional Chinese digest with overview, action items, grouped outline, per-email summaries, links, and attachments.
+- Checks sent mail first so delayed schedule runs do not create duplicate digests.
 
 ## Required Secrets
 
-Add these repository secrets in GitHub:
+Add these repository secrets in GitHub. Without them, the workflow cannot read Gmail, call OpenAI, or send email.
 
 | Secret | Description |
 | --- | --- |
@@ -37,7 +32,8 @@ Optional repository variables:
 | `TIMEZONE` | `America/Los_Angeles` |
 | `SUMMARY_MODEL` | `gpt-4.1-mini` |
 | `MAX_EMAILS` | `500` |
-| `RUN_HOUR_LOCAL` | `6` |
+| `RUN_AFTER_HOUR_LOCAL` | `6` |
+| `RUN_BEFORE_HOUR_LOCAL` | `12` |
 
 ## Gmail OAuth Scopes
 
@@ -76,4 +72,4 @@ GitHub Actions uses UTC cron, so the workflow wakes up hourly:
 0 * * * *
 ```
 
-The script checks `TIMEZONE` and exits unless the local hour equals `RUN_HOUR_LOCAL`. This keeps the digest at 6:00 AM Pacific across daylight saving time changes.
+The script checks `TIMEZONE` and only sends inside the local retry window, defaulting to 6:00 AM through noon. It also checks sent mail for the same digest subject before sending, so delayed GitHub schedule runs do not create duplicates.
