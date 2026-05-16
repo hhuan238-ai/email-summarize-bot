@@ -5,7 +5,7 @@ Daily Gmail summary bot that collects the previous day's received emails, asks O
 ## What It Does
 
 - Runs in GitHub Actions, so your computer does not need to be on.
-- Wakes up every 15 minutes and sends once between 6:00 AM and noon in the configured local timezone.
+- Wakes up every 5 minutes and sends once between 6:00 AM and noon in the configured local timezone.
 - Searches Gmail for messages received during the previous local calendar day.
 - Excludes sent mail, drafts, spam, and trash.
 - Reads sender, recipients, subject, timestamp, snippet, body text, links, and attachment names.
@@ -104,10 +104,10 @@ python email_summarize_bot.py
 
 ## Schedule
 
-GitHub Actions uses UTC cron, so the workflow wakes up every 15 minutes:
+GitHub Actions uses UTC cron, so the workflow wakes up every 5 minutes:
 
 ```text
-*/15 * * * *
+*/5 * * * *
 ```
 
 The script checks `TIMEZONE` and only sends inside the local retry window, defaulting to 6:00 AM through noon. It also checks sent mail for the same digest subject before sending, so delayed GitHub schedule runs do not create duplicates.
