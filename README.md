@@ -65,6 +65,8 @@ python scripts/get_gmail_refresh_token.py
 9. Add `GMAIL_USER_EMAIL` and `SUMMARY_RECIPIENT_EMAIL` as repository secrets.
 10. Go to the Actions tab, choose "Daily Email Summary", and run it once with "Run workflow" to verify.
 
+For a manual resend test, choose `force_resend=true` when running the workflow manually. Scheduled runs keep duplicate protection enabled.
+
 ## Optional Variables
 
 | Variable | Default |
