@@ -24,7 +24,7 @@ jobs:
 
       - name: Send daily summary
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
@@ -33,6 +33,6 @@ jobs:
           TIMEZONE: ${{ vars.TIMEZONE || 'America/Los_Angeles' }}
           RUN_AFTER_HOUR_LOCAL: "6"
           RUN_BEFORE_HOUR_LOCAL: "12"
-          SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gpt-4.1-mini' }}
+          SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gemini-2.0-flash' }}
           MAX_EMAILS: ${{ vars.MAX_EMAILS || '500' }}
         run: python email_summarize_bot.py
