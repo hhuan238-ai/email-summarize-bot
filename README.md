@@ -5,7 +5,7 @@ Daily Gmail summary bot that collects the previous day's received emails, asks G
 ## What It Does
 
 - Runs in GitHub Actions, so your computer does not need to be on.
-- Wakes up every 5 minutes and sends once between 6:00 AM and noon in the configured local timezone.
+- Wakes up every 5 minutes and sends once between midnight and 6:00 AM in the configured local timezone.
 - Searches Gmail for messages received during the previous local calendar day.
 - Excludes sent mail, drafts, spam, and trash.
 - Reads sender, recipients, subject, timestamp, snippet, body text, links, and attachment names.
@@ -72,8 +72,8 @@ python scripts/get_gmail_refresh_token.py
 | `TIMEZONE` | `America/Los_Angeles` |
 | `SUMMARY_MODEL` | `gemini-2.0-flash` |
 | `MAX_EMAILS` | `500` |
-| `RUN_AFTER_HOUR_LOCAL` | `6` |
-| `RUN_BEFORE_HOUR_LOCAL` | `12` |
+| `RUN_AFTER_HOUR_LOCAL` | `0` |
+| `RUN_BEFORE_HOUR_LOCAL` | `6` |
 
 ## Gmail OAuth Scopes
 
@@ -112,7 +112,7 @@ GitHub Actions uses UTC cron, so the workflow wakes up every 5 minutes:
 */5 * * * *
 ```
 
-The script checks `TIMEZONE` and only sends inside the local retry window, defaulting to 6:00 AM through noon. It also checks sent mail for the same digest subject before sending, so delayed GitHub schedule runs do not create duplicates.
+The script checks `TIMEZONE` and only sends inside the local retry window, defaulting to midnight through 6:00 AM. It keeps retrying during that window and checks sent mail for the same digest subject before sending, so delayed GitHub schedule runs do not create duplicates.
 
 ## Watchdogs
 
@@ -124,7 +124,7 @@ There are 5 independent watchdog workflows:
 - `Email Summary Watchdog 4`
 - `Email Summary Watchdog 5`
 
-They wake up on staggered 5-minute schedules and only perform checks during the local watchdog window, defaulting to noon through 2:00 PM. Each watchdog checks sent mail for the expected digest subject:
+They wake up on staggered 5-minute schedules and only perform checks near the end of the local retry window, defaulting to 5:00 AM through 6:00 AM. Each watchdog checks sent mail for the expected digest subject:
 
 ```text
 昨日郵件摘要 - YYYY/MM/DD
@@ -144,5 +144,5 @@ The alert also has duplicate protection, so all 5 watchdogs can run without send
 - If GitHub logs show empty environment values, the repository secrets are missing or were added under the wrong repository.
 - If GitHub logs show a Gemini quota or API key error, the bot will still send a fallback digest, but you should check the `GEMINI_API_KEY`, Gemini free tier limits, or Google AI Studio project settings.
 - If Google OAuth shows a localhost server error while generating the refresh token, rerun `python scripts/get_gmail_refresh_token.py` and use the newly printed URL.
-- If the bot does not send exactly at 6:00 AM, this is normal for GitHub scheduled workflows. It will send once when GitHub wakes it during the 6:00 AM to noon local retry window.
+- If the bot does not send exactly at midnight, this is normal for GitHub scheduled workflows. It will send once when GitHub wakes it during the midnight to 6:00 AM local retry window.
 - If you receive `Email Summarize Bot 警告 - 未找到摘要`, open the Actions tab and inspect the `Daily Email Summary` workflow logs for that morning.
