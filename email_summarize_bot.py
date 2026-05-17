@@ -11,9 +11,9 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
+from google import genai
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from openai import OpenAI, OpenAIError
 
 
 GMAIL_SCOPES = [
@@ -211,38 +211,29 @@ def build_summary(records: list[EmailRecord], target_date: str, model: str) -> s
     prompt_items = "\n\n---\n\n".join(
         format_email_for_prompt(index, record) for index, record in enumerate(records, start=1)
     )
-    client = OpenAI()
+    client = genai.Client(api_key=required_env("GEMINI_API_KEY"))
+    prompt = (
+        "You are an executive email summarizer. Write in Traditional Chinese. "
+        "Be concise, accurate, and action-oriented. Do not invent facts.\n\n"
+        f"Please summarize the following {len(records)} emails into one daily digest email. "
+        "Write the digest in Traditional Chinese.\n\n"
+        f"Date: {target_date}\n\n"
+        "Use these sections:\n"
+        "1. Overview: total email count and the 3-5 most important items\n"
+        "2. Items that need my reply or action\n"
+        "3. Outline grouped by topic or sender\n"
+        "4. Concise summary for each email: sender, time, subject, key points, possible next step\n"
+        "5. Important links and attachment list\n\n"
+        f"Emails:\n\n{prompt_items}"
+    )
     try:
-        response = client.responses.create(
+        response = client.models.generate_content(
             model=model,
-            input=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an executive email summarizer. Write in Traditional Chinese. "
-                        "Be concise, accurate, and action-oriented. Do not invent facts."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": (
-                        f"Please summarize the following {len(records)} emails into one daily digest email. "
-                        "Write the digest in Traditional Chinese.\n\n"
-                        f"Date: {target_date}\n\n"
-                        "Use these sections:\n"
-                        "1. Overview: total email count and the 3-5 most important items\n"
-                        "2. Items that need my reply or action\n"
-                        "3. Outline grouped by topic or sender\n"
-                        "4. Concise summary for each email: sender, time, subject, key points, possible next step\n"
-                        "5. Important links and attachment list\n\n"
-                        f"Emails:\n\n{prompt_items}"
-                    ),
-                },
-            ],
+            contents=prompt,
         )
-        return response.output_text.strip()
-    except OpenAIError as error:
-        print(f"OpenAI summary failed; sending fallback digest instead: {error}")
+        return (response.text or "").strip() or build_fallback_summary(records, target_date)
+    except Exception as error:
+        print(f"Gemini summary failed; sending fallback digest instead: {error}")
         return build_fallback_summary(records, target_date)
 
 
@@ -250,7 +241,7 @@ def build_fallback_summary(records: list[EmailRecord], target_date: str) -> str:
     lines = [
         f"昨日郵件摘要 - {target_date}",
         "",
-        "OpenAI 摘要服務目前無法使用，所以這封是系統自動產生的備援摘要。",
+        "Gemini 摘要服務目前無法使用，所以這封是系統自動產生的備援摘要。",
         f"共收到 {len(records)} 封符合條件的郵件。",
         "",
         "郵件清單",
@@ -278,7 +269,7 @@ def build_fallback_summary(records: list[EmailRecord], target_date: str) -> str:
         [
             "",
             "系統提醒",
-            "這封信表示 Gmail 抓信與寄信功能正常，但 OpenAI API 摘要步驟失敗。請檢查 OpenAI 帳戶額度、付款方式或 API key。"
+            "這封信表示 Gmail 抓信與寄信功能正常，但 Gemini API 摘要步驟失敗。請檢查 Gemini API key、免費額度或專案設定。"
         ]
     )
     return "\n".join(lines)
@@ -334,7 +325,7 @@ def main() -> None:
     if not should_run_now(tz_name):
         return
 
-    model = os.getenv("SUMMARY_MODEL", "gpt-4.1-mini")
+    model = os.getenv("SUMMARY_MODEL", "gemini-2.0-flash")
     max_emails = int(os.getenv("MAX_EMAILS", "500"))
     sender = required_env("GMAIL_USER_EMAIL")
     recipient = required_env("SUMMARY_RECIPIENT_EMAIL")
