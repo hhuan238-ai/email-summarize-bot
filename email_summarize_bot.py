@@ -292,6 +292,10 @@ def sent_digest_exists(service: Any, recipient: str, subject: str) -> bool:
     return bool(response.get("messages"))
 
 
+def env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def should_run_now(tz_name: str) -> bool:
     run_after = os.getenv("RUN_AFTER_HOUR_LOCAL")
     run_before = os.getenv("RUN_BEFORE_HOUR_LOCAL")
@@ -335,7 +339,7 @@ def main() -> None:
     service = gmail_service()
 
     subject = f"\u6628\u65e5\u90f5\u4ef6\u6458\u8981 - {target_date}"
-    if sent_digest_exists(service, recipient, subject):
+    if sent_digest_exists(service, recipient, subject) and not env_flag("FORCE_RESEND"):
         print(f"Digest already sent for {target_date}; skipping duplicate.")
         return
 
