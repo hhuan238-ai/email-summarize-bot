@@ -234,18 +234,22 @@ def build_summary(records: list[EmailRecord], target_date: str, model: str) -> s
         return (response.text or "").strip() or build_fallback_summary(records, target_date)
     except Exception as error:
         print(f"Gemini summary failed; sending fallback digest instead: {error}")
-        return build_fallback_summary(records, target_date)
+        return build_fallback_summary(records, target_date, str(error))
 
 
-def build_fallback_summary(records: list[EmailRecord], target_date: str) -> str:
+def build_fallback_summary(records: list[EmailRecord], target_date: str, error_message: str | None = None) -> str:
     lines = [
         f"昨日郵件摘要 - {target_date}",
         "",
         "Gemini 摘要服務目前無法使用，所以這封是系統自動產生的備援摘要。",
         f"共收到 {len(records)} 封符合條件的郵件。",
+    ]
+    if error_message:
+        lines.extend(["", f"Gemini 錯誤原因: {error_message[:1200]}"])
+    lines.extend([
         "",
         "郵件清單",
-    ]
+    ])
 
     for index, record in enumerate(records, start=1):
         preview = record.body or record.snippet
