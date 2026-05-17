@@ -31,8 +31,8 @@ jobs:
           GMAIL_USER_EMAIL: ${{ secrets.GMAIL_USER_EMAIL }}
           SUMMARY_RECIPIENT_EMAIL: ${{ secrets.SUMMARY_RECIPIENT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'America/Los_Angeles' }}
-          RUN_AFTER_HOUR_LOCAL: "6"
-          RUN_BEFORE_HOUR_LOCAL: "12"
+          RUN_AFTER_HOUR_LOCAL: "0"
+          RUN_BEFORE_HOUR_LOCAL: "6"
           SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gemini-2.0-flash' }}
           MAX_EMAILS: ${{ vars.MAX_EMAILS || '500' }}
         run: python email_summarize_bot.py
