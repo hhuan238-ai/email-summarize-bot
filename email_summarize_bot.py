@@ -204,8 +204,8 @@ Body:
 def build_summary(records: list[EmailRecord], target_date: str, model: str) -> str:
     if not records:
         return (
-            f"\u6628\u65e5\u90f5\u4ef6\u6458\u8981 - {target_date}\n\n"
-            "\u6628\u5929\u6c92\u6709\u6536\u5230\u7b26\u5408\u689d\u4ef6\u7684\u90f5\u4ef6\u3002\n"
+            f"昨日郵件摘要 - {target_date}\n\n"
+            "昨天沒有收到符合條件的郵件。\n"
         )
 
     prompt_items = "\n\n---\n\n".join(
@@ -329,7 +329,7 @@ def main() -> None:
     if not should_run_now(tz_name):
         return
 
-    model = os.getenv("SUMMARY_MODEL", "gemini-2.0-flash")
+    model = os.getenv("SUMMARY_MODEL", "gemini-2.5-flash-lite")
     max_emails = int(os.getenv("MAX_EMAILS", "500"))
     sender = required_env("GMAIL_USER_EMAIL")
     recipient = required_env("SUMMARY_RECIPIENT_EMAIL")
@@ -338,7 +338,7 @@ def main() -> None:
     query = gmail_query(start, end)
     service = gmail_service()
 
-    subject = f"\u6628\u65e5\u90f5\u4ef6\u6458\u8981 - {target_date}"
+    subject = f"昨日郵件摘要 - {target_date}"
     if sent_digest_exists(service, recipient, subject) and not env_flag("FORCE_RESEND"):
         print(f"Digest already sent for {target_date}; skipping duplicate.")
         return
