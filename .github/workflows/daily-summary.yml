@@ -43,6 +43,6 @@ jobs:
           RUN_AFTER_HOUR_LOCAL: "0"
           RUN_BEFORE_HOUR_LOCAL: "6"
           FORCE_RESEND: ${{ github.event.inputs.force_resend || 'false' }}
-          SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gemini-2.0-flash' }}
+          SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gemini-2.5-flash-lite' }}
           MAX_EMAILS: ${{ vars.MAX_EMAILS || '500' }}
         run: python email_summarize_bot.py
