@@ -10,6 +10,7 @@ Daily Gmail summary bot that collects the previous day's received emails, asks O
 - Excludes sent mail, drafts, spam, and trash.
 - Reads sender, recipients, subject, timestamp, snippet, body text, links, and attachment names.
 - Produces a Traditional Chinese digest with overview, action items, grouped outline, per-email summaries, links, and attachments.
+- Sends a non-AI fallback digest if OpenAI is temporarily unavailable or the API key has insufficient quota.
 - Checks sent mail first so delayed schedule runs do not create duplicate digests.
 - Includes 5 independent watchdog workflows that alert you if the daily digest is missing after the retry window.
 
@@ -141,6 +142,7 @@ The alert also has duplicate protection, so all 5 watchdogs can run without send
 
 - If the manual workflow succeeds with `Digest already sent ... skipping duplicate`, the secrets and Gmail connection are working; the bot skipped because that date's digest already exists in sent mail.
 - If GitHub logs show empty environment values, the repository secrets are missing or were added under the wrong repository.
+- If GitHub logs show `insufficient_quota`, the OpenAI account or API key has no available quota. The bot will still send a fallback digest, but you should update OpenAI billing or replace `OPENAI_API_KEY` for AI summaries.
 - If Google OAuth shows a localhost server error while generating the refresh token, rerun `python scripts/get_gmail_refresh_token.py` and use the newly printed URL.
 - If the bot does not send exactly at 6:00 AM, this is normal for GitHub scheduled workflows. It will send once when GitHub wakes it during the 6:00 AM to noon local retry window.
 - If you receive `Email Summarize Bot 警告 - 未找到摘要`, open the Actions tab and inspect the `Daily Email Summary` workflow logs for that morning.
