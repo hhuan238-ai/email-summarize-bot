@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 
 
 GMAIL_SCOPES = [
@@ -212,34 +212,76 @@ def build_summary(records: list[EmailRecord], target_date: str, model: str) -> s
         format_email_for_prompt(index, record) for index, record in enumerate(records, start=1)
     )
     client = OpenAI()
-    response = client.responses.create(
-        model=model,
-        input=[
-            {
-                "role": "system",
-                "content": (
-                    "You are an executive email summarizer. Write in Traditional Chinese. "
-                    "Be concise, accurate, and action-oriented. Do not invent facts."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Please summarize the following {len(records)} emails into one daily digest email. "
-                    "Write the digest in Traditional Chinese.\n\n"
-                    f"Date: {target_date}\n\n"
-                    "Use these sections:\n"
-                    "1. Overview: total email count and the 3-5 most important items\n"
-                    "2. Items that need my reply or action\n"
-                    "3. Outline grouped by topic or sender\n"
-                    "4. Concise summary for each email: sender, time, subject, key points, possible next step\n"
-                    "5. Important links and attachment list\n\n"
-                    f"Emails:\n\n{prompt_items}"
-                ),
-            },
-        ],
+    try:
+        response = client.responses.create(
+            model=model,
+            input=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an executive email summarizer. Write in Traditional Chinese. "
+                        "Be concise, accurate, and action-oriented. Do not invent facts."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Please summarize the following {len(records)} emails into one daily digest email. "
+                        "Write the digest in Traditional Chinese.\n\n"
+                        f"Date: {target_date}\n\n"
+                        "Use these sections:\n"
+                        "1. Overview: total email count and the 3-5 most important items\n"
+                        "2. Items that need my reply or action\n"
+                        "3. Outline grouped by topic or sender\n"
+                        "4. Concise summary for each email: sender, time, subject, key points, possible next step\n"
+                        "5. Important links and attachment list\n\n"
+                        f"Emails:\n\n{prompt_items}"
+                    ),
+                },
+            ],
+        )
+        return response.output_text.strip()
+    except OpenAIError as error:
+        print(f"OpenAI summary failed; sending fallback digest instead: {error}")
+        return build_fallback_summary(records, target_date)
+
+
+def build_fallback_summary(records: list[EmailRecord], target_date: str) -> str:
+    lines = [
+        f"昨日郵件摘要 - {target_date}",
+        "",
+        "OpenAI 摘要服務目前無法使用，所以這封是系統自動產生的備援摘要。",
+        f"共收到 {len(records)} 封符合條件的郵件。",
+        "",
+        "郵件清單",
+    ]
+
+    for index, record in enumerate(records, start=1):
+        preview = record.body or record.snippet
+        preview = normalize_space(preview)[:700]
+        links = ", ".join(record.links[:5]) if record.links else "無"
+        attachments = ", ".join(record.attachments) if record.attachments else "無"
+        lines.extend(
+            [
+                "",
+                f"{index}. {record.subject}",
+                f"寄件者: {record.sender}",
+                f"時間: {record.received_at}",
+                f"收件者: {record.to}",
+                f"附件: {attachments}",
+                f"連結: {links}",
+                f"內容預覽: {preview or record.snippet or '無內容'}",
+            ]
+        )
+
+    lines.extend(
+        [
+            "",
+            "系統提醒",
+            "這封信表示 Gmail 抓信與寄信功能正常，但 OpenAI API 摘要步驟失敗。請檢查 OpenAI 帳戶額度、付款方式或 API key。"
+        ]
     )
-    return response.output_text.strip()
+    return "\n".join(lines)
 
 
 def send_email(service: Any, sender: str, recipient: str, subject: str, body: str) -> None:
