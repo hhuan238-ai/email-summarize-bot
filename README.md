@@ -72,7 +72,7 @@ For a manual resend test, choose `force_resend=true` when running the workflow m
 | Variable | Default |
 | --- | --- |
 | `TIMEZONE` | `America/Los_Angeles` |
-| `SUMMARY_MODEL` | `gemini-2.0-flash` |
+| `SUMMARY_MODEL` | `gemini-2.5-flash-lite` |
 | `MAX_EMAILS` | `500` |
 | `RUN_AFTER_HOUR_LOCAL` | `0` |
 | `RUN_BEFORE_HOUR_LOCAL` | `6` |
