@@ -204,8 +204,8 @@ Body:
 def build_summary(records: list[EmailRecord], target_date: str, model: str) -> str:
     if not records:
         return (
-            f"昨日郵件摘要 - {target_date}\n\n"
-            "昨天沒有收到符合條件的郵件。\n"
+            f"\u6628\u65e5\u90f5\u4ef6\u6458\u8981 - {target_date}\n\n"
+            "\u6628\u5929\u6c92\u6709\u6536\u5230\u7b26\u5408\u689d\u4ef6\u7684\u90f5\u4ef6\u3002\n"
         )
 
     prompt_items = "\n\n---\n\n".join(
@@ -312,6 +312,7 @@ def should_run_now(tz_name: str) -> bool:
         return True
 
     now = datetime.now(ZoneInfo(tz_name))
+    print(f"Current local time: {now.strftime('%Y-%m-%d %H:%M:%S %Z')} ({tz_name}).")
     if exact_hour and not (run_after or run_before):
         if now.hour != int(exact_hour):
             print(f"Skipping run at local hour {now.hour}; configured hour is {exact_hour}.")
@@ -341,8 +342,9 @@ def main() -> None:
     start, end, target_date = previous_day_bounds(tz_name)
     query = gmail_query(start, end)
     service = gmail_service()
+    print(f"Target digest date: {target_date}. Gmail query: {query}")
 
-    subject = f"昨日郵件摘要 - {target_date}"
+    subject = f"\u6628\u65e5\u90f5\u4ef6\u6458\u8981 - {target_date}"
     if sent_digest_exists(service, recipient, subject) and not env_flag("FORCE_RESEND"):
         print(f"Digest already sent for {target_date}; skipping duplicate.")
         return

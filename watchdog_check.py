@@ -16,6 +16,7 @@ def should_check_now(tz_name: str) -> bool:
     start_hour = int(os.getenv("WATCHDOG_AFTER_HOUR_LOCAL", "12"))
     end_hour = int(os.getenv("WATCHDOG_BEFORE_HOUR_LOCAL", "14"))
     now = datetime.now(ZoneInfo(tz_name))
+    print(f"Current local time: {now.strftime('%Y-%m-%d %H:%M:%S %Z')} ({tz_name}).")
     if not (start_hour <= now.hour < end_hour):
         print(f"Skipping watchdog at local hour {now.hour}; configured window is {start_hour}:00-{end_hour}:00.")
         return False
@@ -50,6 +51,7 @@ def main() -> None:
     _, _, target_date = previous_day_bounds(tz_name)
     digest_subject = f"昨日郵件摘要 - {target_date}"
     alert_subject = f"Email Summarize Bot 警告 - 未找到摘要 - {target_date}"
+    print(f"Watchdog target digest date: {target_date}. Expected subject: {digest_subject}")
 
     service = gmail_service()
     if sent_digest_exists(service, recipient, digest_subject):
