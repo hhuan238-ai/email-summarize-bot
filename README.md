@@ -108,13 +108,13 @@ python email_summarize_bot.py
 
 ## Schedule
 
-GitHub Actions uses UTC cron, so the workflow wakes up every 5 minutes:
+GitHub Actions uses UTC cron. The daily workflow wakes up every 5 minutes only during the UTC hours that can overlap with midnight through 6:00 AM in `America/Los_Angeles`:
 
 ```text
-*/5 * * * *
+3,8,13,18,23,28,33,38,43,48,53,58 7-13 * * *
 ```
 
-The script checks `TIMEZONE` and only sends inside the local retry window, defaulting to midnight through 6:00 AM. It keeps retrying during that window and checks sent mail for the same digest subject before sending, so delayed GitHub schedule runs do not create duplicates.
+The script still checks `TIMEZONE` and only sends inside the local retry window, defaulting to midnight through 6:00 AM. It keeps retrying during that window and checks sent mail for the same digest subject before sending, so delayed GitHub schedule runs do not create duplicates.
 
 ## Watchdogs
 
@@ -126,7 +126,7 @@ There are 5 independent watchdog workflows:
 - `Email Summary Watchdog 4`
 - `Email Summary Watchdog 5`
 
-They wake up on staggered 5-minute schedules and only perform checks near the end of the local retry window, defaulting to 5:00 AM through 6:00 AM. Each watchdog checks sent mail for the expected digest subject:
+They wake up on staggered 5-minute schedules during the UTC hours that can overlap with the local alert window. The script only performs checks near the end of the local retry window, defaulting to 5:00 AM through 6:00 AM. Each watchdog checks sent mail for the expected digest subject:
 
 ```text
 昨日郵件摘要 - YYYY/MM/DD
