@@ -2,7 +2,7 @@ name: Daily Email Summary
 
 on:
   schedule:
-    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 7-13 * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       force_resend:
@@ -40,8 +40,6 @@ jobs:
           GMAIL_USER_EMAIL: ${{ secrets.GMAIL_USER_EMAIL }}
           SUMMARY_RECIPIENT_EMAIL: ${{ secrets.SUMMARY_RECIPIENT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'America/Los_Angeles' }}
-          RUN_AFTER_HOUR_LOCAL: "0"
-          RUN_BEFORE_HOUR_LOCAL: "6"
           FORCE_RESEND: ${{ github.event.inputs.force_resend || 'false' }}
           SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gemini-2.5-flash-lite' }}
           MAX_EMAILS: ${{ vars.MAX_EMAILS || '500' }}

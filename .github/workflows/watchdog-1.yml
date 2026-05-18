@@ -2,7 +2,7 @@ name: Email Summary Watchdog 1
 
 on:
   schedule:
-    - cron: "1,6,11,16,21,26,31,36,41,46,51,56 12-14 * * *"
+    - cron: "1,6,11,16,21,26,31,36,41,46,51,56 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -30,6 +30,6 @@ jobs:
           GMAIL_USER_EMAIL: ${{ secrets.GMAIL_USER_EMAIL }}
           SUMMARY_RECIPIENT_EMAIL: ${{ secrets.SUMMARY_RECIPIENT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'America/Los_Angeles' }}
-          WATCHDOG_AFTER_HOUR_LOCAL: "5"
-          WATCHDOG_BEFORE_HOUR_LOCAL: "6"
+          WATCHDOG_AFTER_HOUR_LOCAL: "6"
+          WATCHDOG_BEFORE_HOUR_LOCAL: "24"
         run: python watchdog_check.py
