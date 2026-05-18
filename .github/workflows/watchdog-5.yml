@@ -2,7 +2,7 @@ name: Email Summary Watchdog 5
 
 on:
   schedule:
-    - cron: "4,9,14,19,24,29,34,39,44,49,54,59 * * * *"
+    - cron: "5,10,15,20,25,30,35,40,45,50,55 12-14 * * *"
   workflow_dispatch:
 
 jobs:
