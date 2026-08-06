@@ -2,7 +2,9 @@ name: Daily Email Summary
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # Run once per hour. The script limits scheduled sends to the local
+    # delivery window and skips the run once that day's digest exists.
+    - cron: "7 * * * *"
   workflow_dispatch:
     inputs:
       force_resend:
@@ -40,6 +42,8 @@ jobs:
           GMAIL_USER_EMAIL: ${{ secrets.GMAIL_USER_EMAIL }}
           SUMMARY_RECIPIENT_EMAIL: ${{ secrets.SUMMARY_RECIPIENT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'America/Los_Angeles' }}
+          RUN_AFTER_HOUR_LOCAL: ${{ vars.RUN_AFTER_HOUR_LOCAL || '6' }}
+          RUN_BEFORE_HOUR_LOCAL: ${{ vars.RUN_BEFORE_HOUR_LOCAL || '12' }}
           FORCE_RESEND: ${{ github.event.inputs.force_resend || 'false' }}
           SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gemini-2.5-flash-lite' }}
           MAX_EMAILS: ${{ vars.MAX_EMAILS || '500' }}
