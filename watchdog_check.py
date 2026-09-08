@@ -7,14 +7,15 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 
 from email_summarize_bot import gmail_service, previous_day_bounds, required_env, send_email, sent_digest_exists
+from digest_delivery import find_sent_digest, report_outcome
 
 
 def should_check_now(tz_name: str) -> bool:
     if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
         return True
 
-    start_hour = int(os.getenv("WATCHDOG_AFTER_HOUR_LOCAL", "12"))
-    end_hour = int(os.getenv("WATCHDOG_BEFORE_HOUR_LOCAL", "14"))
+    start_hour = int(os.getenv("WATCHDOG_AFTER_HOUR_LOCAL", "13"))
+    end_hour = int(os.getenv("WATCHDOG_BEFORE_HOUR_LOCAL", "24"))
     now = datetime.now(ZoneInfo(tz_name))
     print(f"Current local time: {now.strftime('%Y-%m-%d %H:%M:%S %Z')} ({tz_name}).")
     if not (start_hour <= now.hour < end_hour):
@@ -54,8 +55,14 @@ def main() -> None:
     print(f"Watchdog target digest date: {target_date}. Expected subject: {digest_subject}")
 
     service = gmail_service()
-    if sent_digest_exists(service, recipient, digest_subject):
-        print(f"Digest exists for {target_date}; watchdog OK.")
+    existing = find_sent_digest(service, recipient, digest_subject)
+    if existing:
+        detail = f"{target_date}: Gmail message ID {existing.message_id}."
+        if existing.kind == "fallback":
+            detail += " Fallback delivered; AI summary is degraded, not complete."
+        elif existing.kind == "legacy":
+            detail += " Legacy digest delivered; AI summary quality is unknown."
+        report_outcome(f"{existing.kind}_sent", detail)
         return
 
     if sent_digest_exists(service, recipient, alert_subject):
@@ -70,7 +77,7 @@ def main() -> None:
         tz_name=tz_name,
     )
     send_email(service, sender, recipient, alert_subject, body)
-    print(f"Sent watchdog alert for {target_date} to {recipient}.")
+    report_outcome("digest_missing", f"{target_date}: missing-digest alert delivered.")
 
 
 if __name__ == "__main__":

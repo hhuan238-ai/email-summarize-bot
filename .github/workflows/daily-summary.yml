@@ -7,6 +7,16 @@ on:
     - cron: "7 * * * *"
   workflow_dispatch:
     inputs:
+      target_date:
+        description: "Completed local date to summarize (YYYY-MM-DD); blank means yesterday"
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: "Generate and report status without sending email"
+        required: false
+        default: true
+        type: boolean
       force_resend:
         description: "Send even if today's digest already exists"
         required: false
@@ -15,6 +25,10 @@ on:
         options:
           - "false"
           - "true"
+
+concurrency:
+  group: email-digest-delivery
+  cancel-in-progress: false
 
 jobs:
   summarize:
@@ -34,6 +48,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Send daily summary
+        id: digest
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
@@ -43,7 +58,11 @@ jobs:
           SUMMARY_RECIPIENT_EMAIL: ${{ secrets.SUMMARY_RECIPIENT_EMAIL }}
           TIMEZONE: ${{ vars.TIMEZONE || 'America/Los_Angeles' }}
           RUN_AFTER_HOUR_LOCAL: ${{ vars.RUN_AFTER_HOUR_LOCAL || '6' }}
-          RUN_BEFORE_HOUR_LOCAL: ${{ vars.RUN_BEFORE_HOUR_LOCAL || '12' }}
+          RUN_BEFORE_HOUR_LOCAL: ${{ vars.RUN_BEFORE_HOUR_LOCAL || '24' }}
+          FALLBACK_AFTER_HOUR_LOCAL: ${{ vars.FALLBACK_AFTER_HOUR_LOCAL || '12' }}
+          SUMMARY_ATTEMPTS: ${{ vars.SUMMARY_ATTEMPTS || '4' }}
+          TARGET_DATE: ${{ github.event.inputs.target_date || '' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           FORCE_RESEND: ${{ github.event.inputs.force_resend || 'false' }}
           SUMMARY_MODEL: ${{ vars.SUMMARY_MODEL || 'gemini-2.5-flash-lite' }}
           MAX_EMAILS: ${{ vars.MAX_EMAILS || '500' }}
